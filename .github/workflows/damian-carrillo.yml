@@ -1,0 +1,38 @@
+name: damian-carrillo-CI/CD
+
+on:
+  push:
+    branches: [ damian-carrillo, main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v3
+    
+    - name: Login a GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Convertir nombre a minúsculas
+      id: lowercase
+      run: echo "repo=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+    
+    - name: Build y Push imagen Docker
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: |
+          ghcr.io/${{ steps.lowercase.outputs.repo }}:latest
+          ghcr.io/${{ steps.lowercase.outputs.repo }}:${{ github.sha }}
